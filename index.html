@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Arte Vera | Admin Portal</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{color-scheme:dark;--bg:#0c0d10;--panel:#15171c;--line:#292c34;--muted:#a4a8b3;--gold:#d8b77a;--white:#f5f5f4}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#202027 0,#0c0d10 48%);color:var(--white);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;padding:20px}
+.wrap{width:min(100%,900px);margin:28px auto}.brand{color:var(--gold);letter-spacing:.25em;font-size:12px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}h1{font-size:24px;letter-spacing:.1em;margin:4px 0}h2{font-size:19px;margin:0 0 8px}.muted,.small{color:var(--muted)}.small{font-size:12px}
+.card{background:rgba(21,23,28,.96);border:1px solid var(--line);border-radius:16px;padding:20px;margin:14px 0;box-shadow:0 14px 40px #0005}
+input{width:100%;background:#0d0f13;color:white;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:15px}
+label{display:block;margin:12px 0 6px;font-size:13px}button{border:0;border-radius:9px;padding:11px 14px;background:var(--gold);color:#17130c;font-weight:700;cursor:pointer}button:disabled{opacity:.5}button.secondary{background:#272a32;color:#fff;border:1px solid var(--line)}button.danger{background:#452729;color:#ffd9d9;border:1px solid #754246}
+.hidden{display:none!important}.msg{color:var(--gold);font-size:13px;min-height:20px;margin-top:10px;overflow-wrap:anywhere}.pill{border:1px solid #66573e;color:var(--gold);border-radius:99px;padding:4px 9px;font-size:11px;text-transform:uppercase}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.editor{border:1px solid var(--line);background:#101217;border-radius:12px;padding:14px;margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions button{flex:1;min-width:110px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.stat{background:#101217;border:1px solid var(--line);border-radius:12px;padding:15px}.stat strong{display:block;font-size:24px;color:var(--gold)}.empty{padding:18px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px;margin-top:12px}
+</style></head>
+<body><main class="wrap">
+<header class="top"><div><div class="brand">ARTE VERA</div><h1>ADMIN WORKSPACE</h1><div class="small">Creative Talent & Project Management</div></div><span id="rolePill" class="pill">Admin</span></header>
+
+<section id="setup" class="card">
+<h2>Connect Supabase</h2><p class="muted small">Use your Project URL and public publishable/anon key only. Never use a service_role or secret key.</p>
+<label>Project URL</label><input id="url" placeholder="https://your-project.supabase.co">
+<label>Publishable / anon key</label><input id="key" placeholder="sb_publishable_..." autocomplete="off">
+<button id="connect" style="margin-top:14px;width:100%">Connect</button><div id="setupMsg" class="msg"></div></section>
+
+<section id="login" class="card hidden"><h2>Admin sign in</h2><p class="muted small">Sign in with your approved Arte Vera admin account.</p>
+<form id="loginForm"><label>Email</label><input id="email" type="email" required autocomplete="username"><label>Password</label><input id="password" type="password" required autocomplete="current-password"><button id="loginBtn" style="width:100%;margin-top:15px">Sign in</button></form><div id="loginMsg" class="msg"></div></section>
+
+<section id="dashboard" class="hidden">
+<div class="card"><div class="row"><div><div class="brand">WELCOME BACK</div><h2 id="hello">Admin</h2><div class="small">Manage editor access and project operations.</div></div><button id="logout" class="secondary">Sign out</button></div></div>
+<div class="grid"><div class="stat"><strong id="pendingCount">—</strong><span class="small">Pending editor approvals</span></div><div class="stat"><strong>Admin</strong><span class="small">Account role</span></div></div>
+<div class="card"><div class="row"><div><h2>Editor approvals</h2><div class="small">Review invited editor accounts before they can access projects.</div></div><button id="refresh" class="secondary">Refresh</button></div><div id="editorList"><div class="empty">Loading editor accounts…</div></div><div id="dashMsg" class="msg"></div></div>
+<div class="card"><h2>Projects & applications</h2><p class="small">The next build step will add project creation, application review and editor assignment here. Your current database functions are already in place.</p></div>
+</section>
+</main>
+<script>
+(() => {
+const $=id=>document.getElementById(id);let sb=null,currentProfile=null;
+function show(id){['setup','login','dashboard'].forEach(x=>$(x).classList.toggle('hidden',x!==id))}
+function msg(id,t){$(id).textContent=t||''}
+function connect(url,key){sb=window.supabase.createClient(url,key);sessionStorage.setItem('av_url',url);sessionStorage.setItem('av_key',key)}
+$('connect').onclick=async()=>{let url=$('url').value.trim(),key=$('key').value.trim();if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)||!key){msg('setupMsg','Enter a valid Supabase Project URL and public key.');return}try{connect(url,key);let {error}=await sb.auth.getSession();if(error)throw error;show('login')}catch(e){msg('setupMsg',e.message)}};
+$('loginForm').onsubmit=async e=>{e.preventDefault();$('loginBtn').disabled=true;msg('loginMsg','Signing in…');try{
+let {data,error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;
+let p=await sb.from('profiles').select('id,full_name,role,account_status').eq('id',data.user.id).single();if(p.error)throw p.error;currentProfile=p.data;
+if(currentProfile.role!=='admin'||currentProfile.account_status!=='approved'){await sb.auth.signOut();throw new Error('This account is not an approved admin account.')}
+$('hello').textContent=currentProfile.full_name||data.user.email;show('dashboard');await loadEditors();
+}catch(e){msg('loginMsg',e.message||'Login failed')}finally{$('loginBtn').disabled=false}};
+async function loadEditors(){msg('dashMsg','Loading editor accounts…');$('editorList').innerHTML='';try{
+let {data,error}=await sb.from('profiles').select('id,full_name,role,account_status,created_at').eq('role','editor').eq('account_status','pending').order('created_at',{ascending:true});if(error)throw error;
+$('pendingCount').textContent=data.length;
+if(!data.length){$('editorList').innerHTML='<div class="empty">No pending editor approvals right now.</div>';msg('dashMsg','');return}
+data.forEach(p=>{let el=document.createElement('div');el.className='editor';let name=document.createElement('strong');name.textContent=p.full_name||'Editor (name not provided)';let detail=document.createElement('div');detail.className='small';detail.textContent='Account status: '+p.account_status+' · Joined: '+(p.created_at?new Date(p.created_at).toLocaleDateString():'—');let actions=document.createElement('div');actions.className='actions';let approve=document.createElement('button');approve.textContent='Approve editor';let reject=document.createElement('button');reject.textContent='Reject';reject.className='danger';approve.onclick=()=>review(p.id,'approved',approve,reject);reject.onclick=()=>review(p.id,'rejected',approve,reject);actions.append(approve,reject);el.append(name,detail,actions);$('editorList').append(el)});
+msg('dashMsg','Pending editor list loaded.');
+}catch(e){msg('dashMsg','Could not load editors: '+e.message)}}
+async function review(id,decision,a,b){if(!confirm('Are you sure you want to '+decision+' this editor?'))return;a.disabled=b.disabled=true;msg('dashMsg','Updating editor status…');try{let {error}=await sb.rpc('review_editor',{p_editor_id:id,p_decision:decision});if(error)throw error;msg('dashMsg','Editor status updated successfully.');await loadEditors()}catch(e){msg('dashMsg','Update failed: '+e.message);a.disabled=b.disabled=false}}
+$('refresh').onclick=loadEditors;
+$('logout').onclick=async()=>{await sb.auth.signOut();currentProfile=null;show('login');msg('loginMsg','Signed out.')};
+let u=sessionStorage.getItem('av_url'),k=sessionStorage.getItem('av_key');if(u&&k){connect(u,k);show('login')}
+})();
+</script></body></html>
