@@ -101,7 +101,18 @@ const title=document.createElement('strong');title.textContent=(p.project_code||
 const detail=document.createElement('div');detail.className='small';detail.textContent=[p.service_type,p.pack_name,'Payment: '+p.payment_status,'Status: '+p.status,p.deadline?'Deadline: '+p.deadline:null].filter(Boolean).join(' · ');
 const brief=document.createElement('p');brief.className='small';brief.textContent=p.brief||'No brief added.';
 const count=document.createElement('div');count.className='small';count.textContent='Applications: '+apps.filter(a=>a.project_id===p.id).length;
-card.append(title,detail,brief,count);$('adminProjects').append(card)
+const actions=document.createElement('div');actions.className='actions';
+const historyBtn=document.createElement('button');historyBtn.className='secondary';historyBtn.textContent='View activity history';historyBtn.onclick=()=>loadProjectHistory(p.id,historyBox);
+actions.append(historyBtn);
+if(['assigned','in_progress','review','revision'].includes(p.status)){
+const revise=document.createElement('button');revise.className='secondary';revise.textContent='Request revision';revise.onclick=()=>updateProjectStatus(p.id,'revision',revise);actions.append(revise);
+const done=document.createElement('button');done.textContent='Mark completed';done.onclick=()=>updateProjectStatus(p.id,'completed',done);actions.append(done);
+}
+if(!['completed','cancelled','awaiting_payment','open'].includes(p.status)){
+const cancel=document.createElement('button');cancel.className='danger';cancel.textContent='Cancel project';cancel.onclick=()=>updateProjectStatus(p.id,'cancelled',cancel);actions.append(cancel);
+}
+const historyBox=document.createElement('div');historyBox.className='small';historyBox.style.marginTop='10px';
+card.append(title,detail,brief,count,actions,historyBox);$('adminProjects').append(card)
 })
 }
 if(!apps.length)$('adminApplications').innerHTML='<div class="empty">No editor applications received yet.</div>';
@@ -149,6 +160,34 @@ catch(e){msg('applicationMsg','Assignment failed: '+e.message);button.disabled=f
 }
 $('adminProjectRefresh').onclick=loadAdminProjects;
 
+async function updateProjectStatus(projectId,newStatus,button){
+const note=prompt('Add an optional note for the project history:')||'';
+if(!confirm('Change project status to '+newStatus.replace('_',' ')+'?'))return;
+button.disabled=true;
+try{
+const {data,error}=await sb.rpc('update_project_progress',{p_project_id:projectId,p_new_status:newStatus,p_details:note||null});
+if(error)throw error;
+msg('applicationMsg',typeof data==='string'?data:'Project status updated.');
+await loadAdminProjects();
+}catch(e){msg('applicationMsg','Status update failed: '+e.message);button.disabled=false}
+}
+async function loadProjectHistory(projectId,target){
+target.textContent='Loading activity…';
+try{
+const {data,error}=await sb.from('project_history').select('action,details,created_at,changed_by').eq('project_id',projectId).order('created_at',{ascending:false});
+if(error)throw error;
+target.innerHTML='';
+if(!data.length){target.textContent='No activity recorded yet.';return}
+data.forEach(item=>{
+const row=document.createElement('div');row.className='editor';
+const title=document.createElement('strong');title.textContent=item.action;
+const time=document.createElement('div');time.className='small';time.textContent=item.created_at?new Date(item.created_at).toLocaleString():'';
+const detail=document.createElement('p');detail.className='small';detail.textContent=item.details||'';
+row.append(title,time,detail);target.append(row)
+})
+}catch(e){target.textContent='Could not load history: '+e.message}
+}
+
 async function loadEditorWorkspace(){
 msg('editorMsg','Loading your workspace…');
 $('availableProjects').innerHTML='';$('myApplications').innerHTML='';$('myAssignments').innerHTML='';
@@ -156,7 +195,7 @@ try{
 const [pr,ap,as]=await Promise.all([
 sb.from('projects').select('id,project_code,title,service_type,pack_name,brief,deliverables,deadline,created_at').eq('payment_status','paid').eq('status','open').order('created_at',{ascending:false}),
 sb.from('applications').select('id,project_id,message,status,applied_at,projects(project_code,title,service_type,pack_name)').eq('editor_id',currentProfile.id).order('applied_at',{ascending:false}),
-sb.from('assignments').select('id,status,assigned_at,projects(id,project_code,title,service_type,pack_name,deadline,brief)').eq('editor_id',currentProfile.id).eq('status','active').order('assigned_at',{ascending:false})
+sb.from('assignments').select('id,status,assigned_at,project_id,projects(id,project_code,title,service_type,pack_name,deadline,brief,status)').eq('editor_id',currentProfile.id).order('assigned_at',{ascending:false})
 ]);
 if(pr.error)throw pr.error;if(ap.error)throw ap.error;if(as.error)throw as.error;
 $('availableCount').textContent=pr.data.length;$('myApplicationCount').textContent=ap.data.length;$('myAssignmentCount').textContent=as.data.length;
@@ -165,9 +204,31 @@ pr.data.forEach(p=>{const el=document.createElement('div');el.className='editor'
 if(!ap.data.length)$('myApplications').innerHTML='<div class="empty">You have not applied to any projects yet.</div>';
 ap.data.forEach(a=>{const el=document.createElement('div');el.className='editor';const p=a.projects||{};const h=document.createElement('strong');h.textContent=(p.project_code||'Project')+' · '+(p.title||'Project details unavailable');const d=document.createElement('div');d.className='small';d.textContent='Status: '+a.status+' · Applied: '+new Date(a.applied_at).toLocaleString();const m=document.createElement('p');m.className='small';m.textContent=a.message||'No message added.';el.append(h,d,m);$('myApplications').append(el)});
 if(!as.data.length)$('myAssignments').innerHTML='<div class="empty">No projects assigned to you yet.</div>';
-as.data.forEach(a=>{const el=document.createElement('div');el.className='editor';const p=a.projects||{};const h=document.createElement('strong');h.textContent=(p.project_code||'Project')+' · '+(p.title||'Project details unavailable');const d=document.createElement('div');d.className='small';d.textContent=[p.service_type,p.pack_name,p.deadline?'Deadline: '+p.deadline:null,'Assigned: '+new Date(a.assigned_at).toLocaleDateString()].filter(Boolean).join(' · ');const b=document.createElement('p');b.className='small';b.textContent=p.brief||'';el.append(h,d,b);$('myAssignments').append(el)});
+as.data.forEach(a=>{
+const el=document.createElement('div');el.className='editor';const p=a.projects||{};
+const h=document.createElement('strong');h.textContent=(p.project_code||'Project')+' · '+(p.title||'Project details unavailable');
+const d=document.createElement('div');d.className='small';d.textContent=[p.service_type,p.pack_name,'Project status: '+(p.status||'—'),'Assignment: '+a.status,p.deadline?'Deadline: '+p.deadline:null,'Assigned: '+new Date(a.assigned_at).toLocaleDateString()].filter(Boolean).join(' · ');
+const b=document.createElement('p');b.className='small';b.textContent=p.brief||'';
+const actions=document.createElement('div');actions.className='actions';
+if(a.status==='active'&&['assigned','revision','in_progress'].includes(p.status)){
+const start=document.createElement('button');start.textContent='Mark in progress';start.onclick=()=>editorUpdateStatus(p.id,'in_progress',start);actions.append(start);
+const review=document.createElement('button');review.className='secondary';review.textContent='Submit for review';review.onclick=()=>editorUpdateStatus(p.id,'review',review);actions.append(review);
+}
+const hist=document.createElement('button');hist.className='secondary';hist.textContent='View project history';const historyBox=document.createElement('div');historyBox.className='small';hist.onclick=()=>loadProjectHistory(p.id,historyBox);actions.append(hist);
+el.append(h,d,b,actions,historyBox);$('myAssignments').append(el)
+});
 msg('editorMsg','Workspace updated.');
 }catch(e){msg('editorMsg','Could not load workspace: '+e.message);$('availableProjects').innerHTML='<div class="empty">Project data could not be loaded. Please contact the admin.</div>'}
+}
+async function editorUpdateStatus(projectId,newStatus,button){
+const note=prompt('Add a short progress note for the admin:')||'';
+button.disabled=true;
+try{
+const {data,error}=await sb.rpc('update_project_progress',{p_project_id:projectId,p_new_status:newStatus,p_details:note||null});
+if(error)throw error;
+msg('editorMsg',typeof data==='string'?data:'Project updated.');
+await loadEditorWorkspace()
+}catch(e){msg('editorMsg','Could not update project: '+e.message);button.disabled=false}
 }
 async function applyForProject(projectId,button){
 const message=prompt('Add a short message for the admin (optional):');if(message===null)return;button.disabled=true;
