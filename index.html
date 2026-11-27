@@ -5,6 +5,7 @@
 <title>Arte Vera | Admin Portal</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+.client-only{display:none!important}
 :root{color-scheme:dark;--bg:#0c0d10;--panel:#15171c;--line:#292c34;--muted:#a4a8b3;--gold:#d8b77a;--white:#f5f5f4}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#202027 0,#0c0d10 48%);color:var(--white);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;padding:20px}
 .wrap{width:min(100%,900px);margin:28px auto}.brand{color:var(--gold);letter-spacing:.25em;font-size:12px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}h1{font-size:24px;letter-spacing:.1em;margin:4px 0}h2{font-size:19px;margin:0 0 8px}.muted,.small{color:var(--muted)}.small{font-size:12px}
@@ -23,14 +24,14 @@ label{display:block;margin:12px 0 6px;font-size:13px}button{border:0;border-radi
 <label>Publishable / anon key</label><input id="key" placeholder="sb_publishable_..." autocomplete="off">
 <button id="connect" style="margin-top:14px;width:100%">Connect</button><div id="setupMsg" class="msg"></div></section>
 
-<section id="login" class="card hidden"><h2>Arte Vera portal sign in</h2><p class="muted small">Sign in with your approved admin, editor, or client account.</p>
-<form id="loginForm"><label>Email</label><input id="email" type="email" required autocomplete="username"><label>Password</label><input id="password" type="password" required autocomplete="current-password"><button id="loginBtn" style="width:100%;margin-top:15px">Sign in</button></form><div id="loginMsg" class="msg"></div><details style="margin-top:16px"><summary style="cursor:pointer;font-weight:600">New client? Create your client login</summary><p class="small muted">Your email must already be added by Arte Vera admin. Use the same email address and verify it before signing in.</p><form id="clientSignupForm"><label>Full name</label><input id="signupName" required maxlength="100" autocomplete="name"><label>Email</label><input id="signupEmail" type="email" required autocomplete="email"><label>Password</label><input id="signupPassword" type="password" required minlength="8" autocomplete="new-password"><button id="clientSignupBtn" style="width:100%;margin-top:12px">Create client account</button></form><div id="signupMsg" class="msg"></div><div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px"><div class="small muted">Already created your account but verification email did not arrive?</div><label for="resendEmail">Client email for verification</label><input id="resendEmail" type="email" autocomplete="email" placeholder="Enter the same client email"><button id="resendVerificationBtn" type="button" class="secondary" style="width:100%;margin-top:8px">Resend verification email</button><div id="resendMsg" class="msg"></div></div></details></section>
+<section id="login" class="card hidden"><h2>Arte Vera portal sign in</h2><p class="muted small">Sign in with your approved Admin or Editor account.</p>
+<form id="loginForm"><label>Email</label><input id="email" type="email" required autocomplete="username"><label>Password</label><input id="password" type="password" required autocomplete="current-password"><button id="loginBtn" style="width:100%;margin-top:15px">Sign in</button></form><div id="loginMsg" class="msg"></div><details class="client-only" style="margin-top:16px"><summary style="cursor:pointer;font-weight:600">New client? Create your client login</summary><p class="small muted">Your email must already be added by Arte Vera admin. Use the same email address and verify it before signing in.</p><form id="clientSignupForm"><label>Full name</label><input id="signupName" required maxlength="100" autocomplete="name"><label>Email</label><input id="signupEmail" type="email" required autocomplete="email"><label>Password</label><input id="signupPassword" type="password" required minlength="8" autocomplete="new-password"><button id="clientSignupBtn" style="width:100%;margin-top:12px">Create client account</button></form><div id="signupMsg" class="msg"></div><div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px"><div class="small muted">Already created your account but verification email did not arrive?</div><label for="resendEmail">Client email for verification</label><input id="resendEmail" type="email" autocomplete="email" placeholder="Enter the same client email"><button id="resendVerificationBtn" type="button" class="secondary" style="width:100%;margin-top:8px">Resend verification email</button><div id="resendMsg" class="msg"></div></div></details></section>
 
 <section id="dashboard" class="hidden">
 <div class="card"><div class="row"><div><div class="brand">WELCOME BACK</div><h2 id="hello">Admin</h2><div class="small">Manage editor access and project operations.</div></div><button id="logout" class="secondary">Sign out</button></div></div>
 <div class="grid"><div class="stat"><strong id="pendingCount">—</strong><span class="small">Pending editor approvals</span></div><div class="stat"><strong>Admin</strong><span class="small">Account role</span></div></div>
 <div class="card"><div class="row"><div><h2>Editor approvals</h2><div class="small">Review invited editor accounts before they can access projects.</div></div><button id="refresh" class="secondary">Refresh</button></div><div id="editorList"><div class="empty">Loading editor accounts…</div></div><div id="dashMsg" class="msg"></div></div>
-<div class="card">
+<div class="card client-only">
 <div class="row"><div><h2>Client management</h2><div class="small">Save client details and link each project to the correct client.</div></div></div>
 <form id="clientForm" class="formgrid">
 <label>Client / business name<input id="clientName" required maxlength="140" placeholder="Client name"></label>
@@ -46,7 +47,7 @@ label{display:block;margin:12px 0 6px;font-size:13px}button{border:0;border-radi
 <label>Project title<input id="projectTitle" required maxlength="140" placeholder="e.g. Brand launch reels"></label>
 <label>Service type<select id="projectService" required><option value="">Choose service</option><option>Short-form Video Editing</option><option>Long-form Video Editing</option><option>Commercial Advertisements</option><option>Motion Graphics</option></select></label>
 <label>Pack name<input id="projectPack" required placeholder="Basic / Standard / Premium"></label>
-<label>Client<select id="projectClient"><option value="">No client linked yet</option></select></label>
+<label class="client-only">Client<select id="projectClient"><option value="">No client linked yet</option></select></label>
 <label>Deadline (optional)<input id="projectDeadline" type="date"></label>
 <label class="full">Project brief<textarea id="projectBrief" rows="3" placeholder="Client instructions and creative direction"></textarea></label>
 <label class="full">Deliverables (optional)<textarea id="projectDeliverables" rows="2" placeholder="Video count, duration, format, aspect ratio..."></textarea></label>
@@ -57,7 +58,7 @@ label{display:block;margin:12px 0 6px;font-size:13px}button{border:0;border-radi
 <div class="card"><h2>Project applications</h2><div class="small">Review every editor application and assign one editor to each eligible project.</div><div id="adminApplications"><div class="empty">Loading applications…</div></div><div id="applicationMsg" class="msg"></div></div>
 </section>
 
-<section id="clientDashboard" class="hidden"><div class="card"><div class="row"><div><div class="brand">CLIENT WORKSPACE</div><h2 id="clientHello">Welcome</h2><div class="small">Track your projects, payment status, and editing progress.</div></div><button id="clientLogout" class="secondary">Sign out</button></div></div><div class="card"><div class="row"><h2>Your projects</h2><button id="clientRefresh" class="secondary">Refresh</button></div><div id="clientProjects"><div class="empty">Loading your projects…</div></div><div id="clientMsg" class="msg"></div></div></section>
+<section id="clientDashboard" class="hidden client-only"><div class="card"><div class="row"><div><div class="brand">CLIENT WORKSPACE</div><h2 id="clientHello">Welcome</h2><div class="small">Track your projects, payment status, and editing progress.</div></div><button id="clientLogout" class="secondary">Sign out</button></div></div><div class="card"><div class="row"><h2>Your projects</h2><button id="clientRefresh" class="secondary">Refresh</button></div><div id="clientProjects"><div class="empty">Loading your projects…</div></div><div id="clientMsg" class="msg"></div></div></section>
 
 <section id="editorDashboard" class="hidden">
 <div class="card"><div class="row"><div><div class="brand">EDITOR WORKSPACE</div><h2 id="editorHello">Welcome</h2><div class="small">Browse available paid projects and track your work.</div></div><button id="editorLogout" class="secondary">Sign out</button></div></div>
@@ -88,7 +89,7 @@ let p=await sb.from('profiles').select('id,full_name,role,account_status').eq('i
 if(currentProfile.account_status!=='approved'){await sb.auth.signOut();throw new Error('Your Arte Vera account is not approved yet.')}
 if(currentProfile.role==='admin'){$('hello').textContent=currentProfile.full_name||data.user.email;show('dashboard');await Promise.all([loadEditors(),loadAdminProjects(),loadClients()]);}
 else if(currentProfile.role==='editor'){$('editorHello').textContent=currentProfile.full_name||data.user.email;show('editorDashboard');await loadEditorWorkspace();}
-else if(currentProfile.role==='client'){$('clientHello').textContent=currentProfile.full_name||data.user.email;show('clientDashboard');await loadClientWorkspace();}
+else if(currentProfile.role==='client'){await sb.auth.signOut();throw new Error('Client access is handled through a separate Arte Vera client website.');}
 else{await sb.auth.signOut();throw new Error('This account does not have portal access.')}
 }catch(e){msg('loginMsg',e.message||'Login failed')}finally{$('loginBtn').disabled=false}};
 async function loadEditors(){msg('dashMsg','Loading editor accounts…');$('editorList').innerHTML='';try{
