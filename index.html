@@ -13,7 +13,7 @@ input{width:100%;background:#0d0f13;color:white;border:1px solid var(--line);bor
 label{display:block;margin:12px 0 6px;font-size:13px}button{border:0;border-radius:9px;padding:11px 14px;background:var(--gold);color:#17130c;font-weight:700;cursor:pointer}button:disabled{opacity:.5}button.secondary{background:#272a32;color:#fff;border:1px solid var(--line)}button.danger{background:#452729;color:#ffd9d9;border:1px solid #754246}
 .hidden{display:none!important}.msg{color:var(--gold);font-size:13px;min-height:20px;margin-top:10px;overflow-wrap:anywhere}.pill{border:1px solid #66573e;color:var(--gold);border-radius:99px;padding:4px 9px;font-size:11px;text-transform:uppercase}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.editor{border:1px solid var(--line);background:#101217;border-radius:12px;padding:14px;margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions button{flex:1;min-width:110px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.stat{background:#101217;border:1px solid var(--line);border-radius:12px;padding:15px}.stat strong{display:block;font-size:24px;color:var(--gold)}.empty{padding:18px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px;margin-top:12px}
-</style></head>
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.formgrid label{display:block}.formgrid input,.formgrid select,.formgrid textarea{display:block;width:100%;margin-top:6px}.formgrid .full{grid-column:1/-1}@media(max-width:620px){.formgrid{grid-template-columns:1fr}.formgrid .full{grid-column:auto}}</style></head>
 <body><main class="wrap">
 <header class="top"><div><div class="brand">ARTE VERA</div><h1>ADMIN WORKSPACE</h1><div class="small">Creative Talent & Project Management</div></div><span id="rolePill" class="pill">Admin</span></header>
 
@@ -30,7 +30,20 @@ label{display:block;margin:12px 0 6px;font-size:13px}button{border:0;border-radi
 <div class="card"><div class="row"><div><div class="brand">WELCOME BACK</div><h2 id="hello">Admin</h2><div class="small">Manage editor access and project operations.</div></div><button id="logout" class="secondary">Sign out</button></div></div>
 <div class="grid"><div class="stat"><strong id="pendingCount">—</strong><span class="small">Pending editor approvals</span></div><div class="stat"><strong>Admin</strong><span class="small">Account role</span></div></div>
 <div class="card"><div class="row"><div><h2>Editor approvals</h2><div class="small">Review invited editor accounts before they can access projects.</div></div><button id="refresh" class="secondary">Refresh</button></div><div id="editorList"><div class="empty">Loading editor accounts…</div></div><div id="dashMsg" class="msg"></div></div>
-<div class="card"><h2>Projects & applications</h2><p class="small">The next build step will add project creation, application review and editor assignment here. Your current database functions are already in place.</p></div>
+<div class="card">
+<div class="row"><div><h2>Create a project</h2><div class="small">New projects start as awaiting payment. They will not appear to editors until payment is securely verified.</div></div></div>
+<form id="projectForm" class="formgrid">
+<label>Project title<input id="projectTitle" required maxlength="140" placeholder="e.g. Brand launch reels"></label>
+<label>Service type<select id="projectService" required><option value="">Choose service</option><option>Short-form Video Editing</option><option>Long-form Video Editing</option><option>Commercial Advertisements</option><option>Motion Graphics</option></select></label>
+<label>Pack name<input id="projectPack" required placeholder="Basic / Standard / Premium"></label>
+<label>Deadline (optional)<input id="projectDeadline" type="date"></label>
+<label class="full">Project brief<textarea id="projectBrief" rows="3" placeholder="Client instructions and creative direction"></textarea></label>
+<label class="full">Deliverables (optional)<textarea id="projectDeliverables" rows="2" placeholder="Video count, duration, format, aspect ratio..."></textarea></label>
+<div class="full"><button id="createProjectBtn" type="submit">Create project (awaiting payment)</button></div>
+</form><div id="projectMsg" class="msg"></div>
+</div>
+<div class="card"><div class="row"><div><h2>All projects</h2><div class="small">Track payment, project status and applications.</div></div><button id="adminProjectRefresh" class="secondary">Refresh</button></div><div id="adminProjects"><div class="empty">Loading projects…</div></div></div>
+<div class="card"><h2>Project applications</h2><div class="small">Review every editor application and assign one editor to each eligible project.</div><div id="adminApplications"><div class="empty">Loading applications…</div></div><div id="applicationMsg" class="msg"></div></div>
 </section>
 
 <section id="editorDashboard" class="hidden">
@@ -44,7 +57,7 @@ label{display:block;margin:12px 0 6px;font-size:13px}button{border:0;border-radi
 <script>
 (() => {
 const $=id=>document.getElementById(id);let sb=null,currentProfile=null;
-function show(id){['setup','login','dashboard'].forEach(x=>$(x).classList.toggle('hidden',x!==id))}
+function show(id){['setup','login','dashboard','editorDashboard'].forEach(x=>$(x).classList.toggle('hidden',x!==id))}
 function msg(id,t){$(id).textContent=t||''}
 function connect(url,key){sb=window.supabase.createClient(url,key);sessionStorage.setItem('av_url',url);sessionStorage.setItem('av_key',key)}
 $('connect').onclick=async()=>{let url=$('url').value.trim(),key=$('key').value.trim();if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)||!key){msg('setupMsg','Enter a valid Supabase Project URL and public key.');return}try{connect(url,key);let {error}=await sb.auth.getSession();if(error)throw error;show('login')}catch(e){msg('setupMsg',e.message)}};
@@ -52,7 +65,7 @@ $('loginForm').onsubmit=async e=>{e.preventDefault();$('loginBtn').disabled=true
 let {data,error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;
 let p=await sb.from('profiles').select('id,full_name,role,account_status').eq('id',data.user.id).single();if(p.error)throw p.error;currentProfile=p.data;
 if(currentProfile.account_status!=='approved'){await sb.auth.signOut();throw new Error('Your Arte Vera account is not approved yet.')}
-if(currentProfile.role==='admin'){$('hello').textContent=currentProfile.full_name||data.user.email;show('dashboard');await loadEditors();}
+if(currentProfile.role==='admin'){$('hello').textContent=currentProfile.full_name||data.user.email;show('dashboard');await Promise.all([loadEditors(),loadAdminProjects()]);}
 else if(currentProfile.role==='editor'){$('editorHello').textContent=currentProfile.full_name||data.user.email;show('editorDashboard');await loadEditorWorkspace();}
 else{await sb.auth.signOut();throw new Error('This portal is currently for admins and editors only.')}
 }catch(e){msg('loginMsg',e.message||'Login failed')}finally{$('loginBtn').disabled=false}};
@@ -66,6 +79,75 @@ msg('dashMsg','Pending editor list loaded.');
 async function review(id,decision,a,b){if(!confirm('Are you sure you want to '+decision+' this editor?'))return;a.disabled=b.disabled=true;msg('dashMsg','Updating editor status…');try{let {error}=await sb.rpc('review_editor',{p_editor_id:id,p_decision:decision});if(error)throw error;msg('dashMsg','Editor status updated successfully.');await loadEditors()}catch(e){msg('dashMsg','Update failed: '+e.message);a.disabled=b.disabled=false}}
 $('refresh').onclick=loadEditors;
 $('logout').onclick=async()=>{await sb.auth.signOut();currentProfile=null;show('login');msg('loginMsg','Signed out.')};
+
+async function loadAdminProjects(){
+$('adminProjects').innerHTML='<div class="empty">Loading projects…</div>';
+$('adminApplications').innerHTML='<div class="empty">Loading applications…</div>';
+try{
+const [projectsResult,appsResult]=await Promise.all([
+sb.from('projects').select('id,project_code,title,service_type,pack_name,brief,deadline,payment_status,status,created_at').order('created_at',{ascending:false}),
+sb.from('applications').select('id,project_id,editor_id,message,status,applied_at').order('applied_at',{ascending:false})
+]);
+if(projectsResult.error)throw projectsResult.error;if(appsResult.error)throw appsResult.error;
+const projects=projectsResult.data||[],apps=appsResult.data||[];
+const editorIds=[...new Set(apps.map(a=>a.editor_id))];let editorMap={};
+if(editorIds.length){const er=await sb.from('profiles').select('id,full_name').in('id',editorIds);if(er.error)throw er.error;(er.data||[]).forEach(e=>editorMap[e.id]=e.full_name||'Editor')}
+if(!projects.length)$('adminProjects').innerHTML='<div class="empty">No projects created yet.</div>';
+else{
+$('adminProjects').innerHTML='';
+projects.forEach(p=>{
+const card=document.createElement('div');card.className='editor';
+const title=document.createElement('strong');title.textContent=(p.project_code||'Project')+' · '+p.title;
+const detail=document.createElement('div');detail.className='small';detail.textContent=[p.service_type,p.pack_name,'Payment: '+p.payment_status,'Status: '+p.status,p.deadline?'Deadline: '+p.deadline:null].filter(Boolean).join(' · ');
+const brief=document.createElement('p');brief.className='small';brief.textContent=p.brief||'No brief added.';
+const count=document.createElement('div');count.className='small';count.textContent='Applications: '+apps.filter(a=>a.project_id===p.id).length;
+card.append(title,detail,brief,count);$('adminProjects').append(card)
+})
+}
+if(!apps.length)$('adminApplications').innerHTML='<div class="empty">No editor applications received yet.</div>';
+else{
+$('adminApplications').innerHTML='';
+apps.forEach(a=>{
+const card=document.createElement('div');card.className='editor';
+const p=projects.find(x=>x.id===a.project_id);
+const title=document.createElement('strong');title.textContent=(p?.project_code||'Project')+' · '+(p?.title||'Project details unavailable');
+const detail=document.createElement('div');detail.className='small';detail.textContent=(editorMap[a.editor_id]||'Editor')+' · '+a.status+' · '+(a.applied_at?new Date(a.applied_at).toLocaleString():'');
+const message=document.createElement('p');message.className='small';message.textContent=a.message||'No application message.';
+card.append(title,detail,message);
+if(a.status==='pending'&&p?.payment_status==='paid'&&p?.status==='open'){
+const assign=document.createElement('button');assign.textContent='Assign this editor';assign.onclick=()=>assignApplication(a.id,assign);card.append(assign)
+}
+$('adminApplications').append(card)
+})
+}
+$('pendingCount').textContent=$('pendingCount').textContent||'0';
+}catch(e){$('adminProjects').innerHTML='<div class="empty">Could not load projects: '+e.message+'</div>';$('adminApplications').innerHTML='<div class="empty">Could not load applications: '+e.message+'</div>'}
+}
+$('projectForm').onsubmit=async e=>{
+e.preventDefault();const btn=$('createProjectBtn');btn.disabled=true;msg('projectMsg','Creating project…');
+try{
+const {data,error}=await sb.rpc('create_artevera_project',{
+p_title:$('projectTitle').value.trim(),
+p_service_type:$('projectService').value,
+p_pack_name:$('projectPack').value.trim(),
+p_brief:$('projectBrief').value.trim()||null,
+p_deliverables:$('projectDeliverables').value.trim()||null,
+p_deadline:$('projectDeadline').value||null,
+p_client_id:null
+});
+if(error)throw error;
+$('projectForm').reset();msg('projectMsg','Project created. It is awaiting verified payment and is not visible to editors yet.');
+await loadAdminProjects()
+}catch(e){msg('projectMsg','Project creation failed: '+e.message)}
+finally{btn.disabled=false}
+};
+async function assignApplication(applicationId,button){
+if(!confirm('Assign this editor to the project? Other pending applications will be closed.'))return;
+button.disabled=true;msg('applicationMsg','Assigning editor…');
+try{const {data,error}=await sb.rpc('assign_project_to_editor',{p_application_id:applicationId});if(error)throw error;msg('applicationMsg',typeof data==='string'?data:'Editor assigned successfully.');await loadAdminProjects()}
+catch(e){msg('applicationMsg','Assignment failed: '+e.message);button.disabled=false}
+}
+$('adminProjectRefresh').onclick=loadAdminProjects;
 
 async function loadEditorWorkspace(){
 msg('editorMsg','Loading your workspace…');
