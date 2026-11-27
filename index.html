@@ -32,6 +32,14 @@ label{display:block;margin:12px 0 6px;font-size:13px}button{border:0;border-radi
 <div class="card"><div class="row"><div><h2>Editor approvals</h2><div class="small">Review invited editor accounts before they can access projects.</div></div><button id="refresh" class="secondary">Refresh</button></div><div id="editorList"><div class="empty">Loading editor accounts…</div></div><div id="dashMsg" class="msg"></div></div>
 <div class="card"><h2>Projects & applications</h2><p class="small">The next build step will add project creation, application review and editor assignment here. Your current database functions are already in place.</p></div>
 </section>
+
+<section id="editorDashboard" class="hidden">
+<div class="card"><div class="row"><div><div class="brand">EDITOR WORKSPACE</div><h2 id="editorHello">Welcome</h2><div class="small">Browse available paid projects and track your work.</div></div><button id="editorLogout" class="secondary">Sign out</button></div></div>
+<div class="grid"><div class="stat"><strong id="availableCount">—</strong><span class="small">Available projects</span></div><div class="stat"><strong id="myApplicationCount">—</strong><span class="small">My applications</span></div><div class="stat"><strong id="myAssignmentCount">—</strong><span class="small">My assigned projects</span></div></div>
+<div class="card"><div class="row"><div><h2>Available projects</h2><div class="small">Only paid and open projects are shown.</div></div><button id="editorRefresh" class="secondary">Refresh</button></div><div id="availableProjects"><div class="empty">Loading projects…</div></div><div id="editorMsg" class="msg"></div></div>
+<div class="card"><h2>My applications</h2><div id="myApplications"><div class="empty">Loading applications…</div></div></div>
+<div class="card"><h2>My assigned projects</h2><div id="myAssignments"><div class="empty">Loading assignments…</div></div></div>
+</section>
 </main>
 <script>
 (() => {
@@ -43,8 +51,10 @@ $('connect').onclick=async()=>{let url=$('url').value.trim(),key=$('key').value.
 $('loginForm').onsubmit=async e=>{e.preventDefault();$('loginBtn').disabled=true;msg('loginMsg','Signing in…');try{
 let {data,error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;
 let p=await sb.from('profiles').select('id,full_name,role,account_status').eq('id',data.user.id).single();if(p.error)throw p.error;currentProfile=p.data;
-if(currentProfile.role!=='admin'||currentProfile.account_status!=='approved'){await sb.auth.signOut();throw new Error('This account is not an approved admin account.')}
-$('hello').textContent=currentProfile.full_name||data.user.email;show('dashboard');await loadEditors();
+if(currentProfile.account_status!=='approved'){await sb.auth.signOut();throw new Error('Your Arte Vera account is not approved yet.')}
+if(currentProfile.role==='admin'){$('hello').textContent=currentProfile.full_name||data.user.email;show('dashboard');await loadEditors();}
+else if(currentProfile.role==='editor'){$('editorHello').textContent=currentProfile.full_name||data.user.email;show('editorDashboard');await loadEditorWorkspace();}
+else{await sb.auth.signOut();throw new Error('This portal is currently for admins and editors only.')}
 }catch(e){msg('loginMsg',e.message||'Login failed')}finally{$('loginBtn').disabled=false}};
 async function loadEditors(){msg('dashMsg','Loading editor accounts…');$('editorList').innerHTML='';try{
 let {data,error}=await sb.from('profiles').select('id,full_name,role,account_status,created_at').eq('role','editor').eq('account_status','pending').order('created_at',{ascending:true});if(error)throw error;
@@ -56,6 +66,35 @@ msg('dashMsg','Pending editor list loaded.');
 async function review(id,decision,a,b){if(!confirm('Are you sure you want to '+decision+' this editor?'))return;a.disabled=b.disabled=true;msg('dashMsg','Updating editor status…');try{let {error}=await sb.rpc('review_editor',{p_editor_id:id,p_decision:decision});if(error)throw error;msg('dashMsg','Editor status updated successfully.');await loadEditors()}catch(e){msg('dashMsg','Update failed: '+e.message);a.disabled=b.disabled=false}}
 $('refresh').onclick=loadEditors;
 $('logout').onclick=async()=>{await sb.auth.signOut();currentProfile=null;show('login');msg('loginMsg','Signed out.')};
+
+async function loadEditorWorkspace(){
+msg('editorMsg','Loading your workspace…');
+$('availableProjects').innerHTML='';$('myApplications').innerHTML='';$('myAssignments').innerHTML='';
+try{
+const [pr,ap,as]=await Promise.all([
+sb.from('projects').select('id,project_code,title,service_type,pack_name,brief,deliverables,deadline,created_at').eq('payment_status','paid').eq('status','open').order('created_at',{ascending:false}),
+sb.from('applications').select('id,project_id,message,status,applied_at,projects(project_code,title,service_type,pack_name)').eq('editor_id',currentProfile.id).order('applied_at',{ascending:false}),
+sb.from('assignments').select('id,status,assigned_at,projects(id,project_code,title,service_type,pack_name,deadline,brief)').eq('editor_id',currentProfile.id).eq('status','active').order('assigned_at',{ascending:false})
+]);
+if(pr.error)throw pr.error;if(ap.error)throw ap.error;if(as.error)throw as.error;
+$('availableCount').textContent=pr.data.length;$('myApplicationCount').textContent=ap.data.length;$('myAssignmentCount').textContent=as.data.length;
+if(!pr.data.length)$('availableProjects').innerHTML='<div class="empty">No paid projects are open right now. Check again later.</div>';
+pr.data.forEach(p=>{const el=document.createElement('div');el.className='editor';const h=document.createElement('strong');h.textContent=(p.project_code||'Project')+' · '+p.title;const d=document.createElement('div');d.className='small';d.textContent=[p.service_type,p.pack_name,p.deadline?'Deadline: '+p.deadline:null].filter(Boolean).join(' · ');const b=document.createElement('p');b.className='small';b.textContent=p.brief||'No additional brief provided.';const btn=document.createElement('button');btn.textContent='Apply for project';btn.onclick=()=>applyForProject(p.id,btn);el.append(h,d,b,btn);$('availableProjects').append(el)});
+if(!ap.data.length)$('myApplications').innerHTML='<div class="empty">You have not applied to any projects yet.</div>';
+ap.data.forEach(a=>{const el=document.createElement('div');el.className='editor';const p=a.projects||{};const h=document.createElement('strong');h.textContent=(p.project_code||'Project')+' · '+(p.title||'Project details unavailable');const d=document.createElement('div');d.className='small';d.textContent='Status: '+a.status+' · Applied: '+new Date(a.applied_at).toLocaleString();const m=document.createElement('p');m.className='small';m.textContent=a.message||'No message added.';el.append(h,d,m);$('myApplications').append(el)});
+if(!as.data.length)$('myAssignments').innerHTML='<div class="empty">No projects assigned to you yet.</div>';
+as.data.forEach(a=>{const el=document.createElement('div');el.className='editor';const p=a.projects||{};const h=document.createElement('strong');h.textContent=(p.project_code||'Project')+' · '+(p.title||'Project details unavailable');const d=document.createElement('div');d.className='small';d.textContent=[p.service_type,p.pack_name,p.deadline?'Deadline: '+p.deadline:null,'Assigned: '+new Date(a.assigned_at).toLocaleDateString()].filter(Boolean).join(' · ');const b=document.createElement('p');b.className='small';b.textContent=p.brief||'';el.append(h,d,b);$('myAssignments').append(el)});
+msg('editorMsg','Workspace updated.');
+}catch(e){msg('editorMsg','Could not load workspace: '+e.message);$('availableProjects').innerHTML='<div class="empty">Project data could not be loaded. Please contact the admin.</div>'}
+}
+async function applyForProject(projectId,button){
+const message=prompt('Add a short message for the admin (optional):');if(message===null)return;button.disabled=true;
+try{const {error}=await sb.rpc('submit_project_application',{p_project_id:projectId,p_message:message||null});if(error)throw error;msg('editorMsg','Application submitted successfully.');await loadEditorWorkspace()}
+catch(e){msg('editorMsg','Could not apply: '+e.message);button.disabled=false}
+}
+$('editorRefresh').onclick=loadEditorWorkspace;
+$('editorLogout').onclick=async()=>{await sb.auth.signOut();currentProfile=null;show('login');msg('loginMsg','Signed out.')};
+
 let u=sessionStorage.getItem('av_url'),k=sessionStorage.getItem('av_key');if(u&&k){connect(u,k);show('login')}
 })();
 </script></body></html>
