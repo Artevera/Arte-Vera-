@@ -31,11 +31,22 @@ label{display:block;margin:12px 0 6px;font-size:13px}button{border:0;border-radi
 <div class="grid"><div class="stat"><strong id="pendingCount">—</strong><span class="small">Pending editor approvals</span></div><div class="stat"><strong>Admin</strong><span class="small">Account role</span></div></div>
 <div class="card"><div class="row"><div><h2>Editor approvals</h2><div class="small">Review invited editor accounts before they can access projects.</div></div><button id="refresh" class="secondary">Refresh</button></div><div id="editorList"><div class="empty">Loading editor accounts…</div></div><div id="dashMsg" class="msg"></div></div>
 <div class="card">
+<div class="row"><div><h2>Client management</h2><div class="small">Save client details and link each project to the correct client.</div></div></div>
+<form id="clientForm" class="formgrid">
+<label>Client / business name<input id="clientName" required maxlength="140" placeholder="Client name"></label>
+<label>Client email<input id="clientEmail" type="email" required placeholder="client@example.com"></label>
+<label>Phone (optional)<input id="clientPhone" type="tel" placeholder="+1..."></label>
+<div class="full"><button id="createClientBtn" type="submit">Save client</button></div>
+</form><div id="clientMsg" class="msg"></div>
+<div id="clientList"><div class="empty">Loading clients…</div></div>
+</div>
+<div class="card">
 <div class="row"><div><h2>Create a project</h2><div class="small">New projects start as awaiting payment. They will not appear to editors until payment is securely verified.</div></div></div>
 <form id="projectForm" class="formgrid">
 <label>Project title<input id="projectTitle" required maxlength="140" placeholder="e.g. Brand launch reels"></label>
 <label>Service type<select id="projectService" required><option value="">Choose service</option><option>Short-form Video Editing</option><option>Long-form Video Editing</option><option>Commercial Advertisements</option><option>Motion Graphics</option></select></label>
 <label>Pack name<input id="projectPack" required placeholder="Basic / Standard / Premium"></label>
+<label>Client<select id="projectClient"><option value="">No client linked yet</option></select></label>
 <label>Deadline (optional)<input id="projectDeadline" type="date"></label>
 <label class="full">Project brief<textarea id="projectBrief" rows="3" placeholder="Client instructions and creative direction"></textarea></label>
 <label class="full">Deliverables (optional)<textarea id="projectDeliverables" rows="2" placeholder="Video count, duration, format, aspect ratio..."></textarea></label>
@@ -65,7 +76,7 @@ $('loginForm').onsubmit=async e=>{e.preventDefault();$('loginBtn').disabled=true
 let {data,error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;
 let p=await sb.from('profiles').select('id,full_name,role,account_status').eq('id',data.user.id).single();if(p.error)throw p.error;currentProfile=p.data;
 if(currentProfile.account_status!=='approved'){await sb.auth.signOut();throw new Error('Your Arte Vera account is not approved yet.')}
-if(currentProfile.role==='admin'){$('hello').textContent=currentProfile.full_name||data.user.email;show('dashboard');await Promise.all([loadEditors(),loadAdminProjects()]);}
+if(currentProfile.role==='admin'){$('hello').textContent=currentProfile.full_name||data.user.email;show('dashboard');await Promise.all([loadEditors(),loadAdminProjects(),loadClients()]);}
 else if(currentProfile.role==='editor'){$('editorHello').textContent=currentProfile.full_name||data.user.email;show('editorDashboard');await loadEditorWorkspace();}
 else{await sb.auth.signOut();throw new Error('This portal is currently for admins and editors only.')}
 }catch(e){msg('loginMsg',e.message||'Login failed')}finally{$('loginBtn').disabled=false}};
@@ -79,6 +90,28 @@ msg('dashMsg','Pending editor list loaded.');
 async function review(id,decision,a,b){if(!confirm('Are you sure you want to '+decision+' this editor?'))return;a.disabled=b.disabled=true;msg('dashMsg','Updating editor status…');try{let {error}=await sb.rpc('review_editor',{p_editor_id:id,p_decision:decision});if(error)throw error;msg('dashMsg','Editor status updated successfully.');await loadEditors()}catch(e){msg('dashMsg','Update failed: '+e.message);a.disabled=b.disabled=false}}
 $('refresh').onclick=loadEditors;
 $('logout').onclick=async()=>{await sb.auth.signOut();currentProfile=null;show('login');msg('loginMsg','Signed out.')};
+
+async function loadClients(){
+try{
+const {data,error}=await sb.from('clients').select('id,name,email,phone,created_at').order('created_at',{ascending:false});
+if(error)throw error;
+const select=$('projectClient');const previous=select.value;select.innerHTML='<option value="">No client linked</option>';
+(data||[]).forEach(c=>{const option=document.createElement('option');option.value=c.id;option.textContent=c.name+' · '+c.email;select.append(option)});
+if(previous)select.value=previous;
+$('clientList').innerHTML='';
+if(!data?.length){$('clientList').innerHTML='<div class="empty">No clients saved yet.</div>';return}
+data.forEach(c=>{const row=document.createElement('div');row.className='editor';const name=document.createElement('strong');name.textContent=c.name;const detail=document.createElement('div');detail.className='small';detail.textContent=c.email+(c.phone?' · '+c.phone:'');row.append(name,detail);$('clientList').append(row)})
+}catch(e){$('clientList').innerHTML='<div class="empty">Could not load clients: '+e.message+'</div>'}
+}
+$('clientForm').onsubmit=async e=>{
+e.preventDefault();const btn=$('createClientBtn');btn.disabled=true;msg('clientMsg','Saving client…');
+try{
+const {error}=await sb.from('clients').insert({name:$('clientName').value.trim(),email:$('clientEmail').value.trim(),phone:$('clientPhone').value.trim()||null});
+if(error)throw error;
+$('clientForm').reset();msg('clientMsg','Client saved successfully.');await loadClients()
+}catch(e){msg('clientMsg','Could not save client: '+e.message)}
+finally{btn.disabled=false}
+};
 
 async function loadAdminProjects(){
 $('adminProjects').innerHTML='<div class="empty">Loading projects…</div>';
@@ -144,7 +177,7 @@ p_pack_name:$('projectPack').value.trim(),
 p_brief:$('projectBrief').value.trim()||null,
 p_deliverables:$('projectDeliverables').value.trim()||null,
 p_deadline:$('projectDeadline').value||null,
-p_client_id:null
+p_client_id:$('projectClient').value||null
 });
 if(error)throw error;
 $('projectForm').reset();msg('projectMsg','Project created. It is awaiting verified payment and is not visible to editors yet.');
