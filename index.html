@@ -6,11 +6,34 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <style>
-:root{color-scheme:dark;--bg:#080a0f;--panel:#171b24;--panel2:#202633;--line:#485365;--muted:#b6bfce;--gold:#d7b878;--gold2:#f3dfb2;--silver:#e2e8f0;--white:#fbfcff;--green:#83d2aa;--red:#f09b9b}
+:root{color-scheme:dark;--bg:#090807;--panel:#151311;--panel2:#201c17;--line:#4b4031;--muted:#b9afa0;--gold:#c7a568;--gold2:#f0d9a8;--silver:#e7dfd2;--white:#faf7f0;--green:#8fc6a1;--red:#d98c83}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
-body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 8% 0%,#aebbd51c 0,transparent 28%),radial-gradient(ellipse at 95% 12%,#b88d4b20 0,transparent 27%),radial-gradient(ellipse at 55% 100%,#33496b26 0,transparent 38%),linear-gradient(145deg,#080a0f,#111722 48%,#080a0f);color:var(--white);font:15px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;padding:22px}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 12% 0%,#c7a5681b 0,transparent 30%),radial-gradient(ellipse at 90% 15%,#a77b3c16 0,transparent 28%),linear-gradient(145deg,#090807,#14110d 52%,#080706);color:var(--white);font:14px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;padding:18px}
 body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;background-image:linear-gradient(#dce5f208 1px,transparent 1px),linear-gradient(90deg,#dce5f208 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(to bottom,#000,transparent 82%)}
-.wrap{position:relative;width:min(100%,1120px);margin:24px auto 60px}
+.wrap{position:relative;width:min(100%,1500px);margin:12px auto 60px}
+.app-shell{display:grid;grid-template-columns:225px minmax(0,1fr);gap:18px;align-items:start}
+.sidebar{position:sticky;top:14px;min-height:calc(100vh - 28px);padding:18px 13px;background:linear-gradient(160deg,#100e0b,#17130f);border:1px solid #c7a5683b;border-radius:22px;box-shadow:0 20px 60px #0009}
+.side-brand{padding:8px 12px 24px;color:var(--gold2);font-weight:900;letter-spacing:.28em;font-size:13px}
+.side-label{font-size:10px;letter-spacing:.2em;color:#8f8372;padding:14px 12px 7px;text-transform:uppercase}
+.side-link{width:100%;display:flex;align-items:center;gap:10px;text-align:left;margin:4px 0;padding:11px 12px;background:transparent;border:1px solid transparent;color:#d9d0c3;box-shadow:none;border-radius:12px;font-weight:650}
+.side-link:hover,.side-link.active{background:linear-gradient(100deg,#c7a56835,#c7a56808);border-color:#c7a56850;color:#f4dfb7;transform:none;box-shadow:none}
+.admin-main{min-width:0}
+.dashboard-hero{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:23px 25px;background:linear-gradient(115deg,#211a11,#17130f 55%,#282016);border:1px solid #c7a56844;border-radius:22px;box-shadow:0 18px 55px #0008;margin-bottom:18px}
+.dashboard-hero h2{font-size:26px;color:#f1dfbf}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}
+.kpi{background:linear-gradient(145deg,#211c15,#12100d);border:1px solid #c7a56840;border-radius:17px;padding:17px;min-width:0}
+.kpi strong{display:block;font-size:clamp(22px,2.5vw,30px);color:var(--gold2);line-height:1.25;overflow-wrap:anywhere}
+.kpi span{display:block;color:#b8ad9d;font-size:11px;margin-top:7px}
+.analytics-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(250px,1fr);gap:14px}
+.chart-wrap{min-height:190px;padding:10px 0}.chart-wrap svg{width:100%;height:190px;overflow:visible}
+.chart-labels{display:flex;justify-content:space-between;color:#a99b86;font-size:10px}
+.section-anchor{scroll-margin-top:16px}
+.finance-box{border:1px solid #c7a56845;background:#17130f;border-radius:14px;padding:14px;margin-top:12px}
+.finance-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.finance-grid label{font-size:11px}
+.message-box{border:1px solid #c7a56835;background:#100e0b;border-radius:14px;padding:13px;margin-top:12px}
+.message-feed{max-height:230px;overflow:auto;display:grid;gap:8px;margin:10px 0}
+.message-bubble{padding:9px 11px;border-radius:12px;background:#211b13;border:1px solid #c7a56825}
+.message-bubble .small{color:#b9a98f}.nav-spacer{height:calc(100vh - 520px);min-height:30px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:26px;padding:18px 20px;border:1px solid #dce5f02c;border-radius:18px;background:linear-gradient(110deg,#242b38e8,#141a25e8 58%,#282318e8);box-shadow:0 16px 44px #0008,inset 0 1px #fff2}
 .brand{color:var(--gold2);letter-spacing:.36em;font-size:11px;font-weight:850;text-transform:uppercase}
 h1{font-size:clamp(24px,4vw,34px);letter-spacing:.14em;margin:6px 0;font-weight:850;color:#f7f9fc;text-shadow:0 2px 24px #d7b87820}
@@ -40,7 +63,7 @@ button.secondary{background:linear-gradient(135deg,#424c5e,#293242);color:#f3f6f
 .formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.formgrid label{display:block}.formgrid input,.formgrid select,.formgrid textarea{display:block;width:100%;margin-top:6px}.formgrid .full{grid-column:1/-1}
 .file-list{display:grid;gap:9px;margin-top:11px}.file-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;border:1px solid #aebbd52b;background:#0b1019;border-radius:12px}.file-item a{color:var(--gold2);font-size:13px;font-weight:700;text-decoration:none;overflow-wrap:anywhere}.file-item a:hover{text-decoration:underline}.file-meta{font-size:11px;color:var(--muted);white-space:nowrap}
 .upload-progress{height:7px;background:#303b4d;border-radius:20px;overflow:hidden;margin-top:8px}.upload-progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,#c6a15e,#f4e2b9);transition:width .15s}
-@media(max-width:620px){body{padding:12px}.wrap{margin:12px auto 40px}.top{padding:15px;align-items:flex-start}.card{padding:18px;border-radius:18px}.formgrid{grid-template-columns:1fr}.formgrid .full{grid-column:auto}.actions button{min-width:100%}.file-item{align-items:flex-start;flex-direction:column}}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.app-shell{grid-template-columns:1fr}.sidebar{position:relative;top:auto;min-height:0;display:flex;gap:6px;overflow:auto;padding:10px}.side-brand,.side-label,.nav-spacer{display:none}.side-link{width:auto;white-space:nowrap;flex:0 0 auto;margin:0}.analytics-grid{grid-template-columns:1fr}}@media(max-width:620px){body{padding:9px}.wrap{margin:8px auto 30px}.top{padding:14px;align-items:flex-start}.card{padding:15px;border-radius:17px}.formgrid{grid-template-columns:1fr}.formgrid .full{grid-column:auto}.actions button{min-width:100%}.file-item{align-items:flex-start;flex-direction:column}.dashboard-hero{padding:18px;align-items:flex-start;flex-direction:column}.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.kpi{padding:13px}.finance-grid{grid-template-columns:1fr}.sidebar{border-radius:14px}.side-link{font-size:11px;padding:9px 10px}}
 </style></head>
 <body><main class="wrap">
 <header class="top"><div><div class="brand">ARTE VERA</div><h1>ADMIN WORKSPACE</h1><div class="small">Creative Talent · Production · Project Operations</div></div><span id="rolePill" class="pill">Admin</span></header>
@@ -55,10 +78,13 @@ button.secondary{background:linear-gradient(135deg,#424c5e,#293242);color:#f3f6f
 <form id="loginForm"><label>Email</label><input id="email" type="email" required autocomplete="username"><label>Password</label><input id="password" type="password" required autocomplete="current-password"><button id="loginBtn" style="width:100%;margin-top:15px">Sign in</button></form><div id="loginMsg" class="msg"></div><details style="margin-top:16px"><summary style="cursor:pointer;font-weight:600">New editor? Apply for an Arte Vera account</summary><p class="small muted">Create your editor account. Your access will remain pending until an admin reviews and approves your application. Verify your email if confirmation is enabled.</p><form id="editorSignupForm"><label>Full name</label><input id="editorSignupName" required maxlength="100" autocomplete="name" placeholder="Your full name"><label>Email</label><input id="editorSignupEmail" type="email" required autocomplete="email" placeholder="you@example.com"><label>Password</label><input id="editorSignupPassword" type="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters"><button id="editorSignupBtn" style="width:100%;margin-top:12px">Create editor account</button></form><div id="editorSignupMsg" class="msg"></div></details></section>
 
 <section id="dashboard" class="hidden">
-<div class="card"><div class="row"><div><div class="brand">WELCOME BACK</div><h2 id="hello">Admin</h2><div class="small">Your command centre for talent, production and delivery.</div></div><button id="logout" class="secondary">Sign out</button></div></div>
-<div class="grid"><div class="stat"><strong id="pendingCount">—</strong><span class="small">Pending editor approvals</span></div><div class="stat"><strong>Admin</strong><span class="small">Account role</span></div></div>
-<div class="card"><div class="row"><div><h2>Editor approvals</h2><div class="small">Review invited editor accounts before they can access projects.</div></div><button id="refresh" class="secondary">Refresh</button></div><div id="editorList"><div class="empty">Loading editor accounts…</div></div><div id="dashMsg" class="msg"></div></div>
-<div class="card client-only">
+<div class="dashboard-hero"><div><div class="brand">ARTE VERA · MANAGEMENT SUITE</div><h2 id="hello">Welcome back</h2><div class="small">Your agency at a glance — projects, people, payments and growth.</div></div><div class="row"><span class="pill">ADMIN CONTROL</span><button id="logout" class="secondary">Sign out</button></div></div>
+<div class="app-shell"><aside class="sidebar"><div class="side-brand">ARTE VERA</div><div class="side-label">Workspace</div><button class="side-link active" data-target="adminOverview">◈ Overview</button><button class="side-link" data-target="editorApprovals">♙ Editors</button><button class="side-link" data-target="clientManagement">♧ Clients</button><button class="side-link" data-target="projectCreate">＋ New project</button><button class="side-link" data-target="allProjects">▤ Projects</button><button class="side-link" data-target="projectApplications">☷ Applications</button><div class="nav-spacer"></div><button class="side-link" id="adminSignOutSide">↗ Sign out</button></aside><div class="admin-main" id="adminMain">
+<div id="adminOverview" class="section-anchor"><div class="kpi-grid"><div class="kpi"><strong id="metricTotalProjects">—</strong><span>Total projects</span></div><div class="kpi"><strong id="metricMonthProjects">—</strong><span>Projects this month</span></div><div class="kpi"><strong id="metricPendingPayments">—</strong><span>Pending client payments</span></div><div class="kpi"><strong id="metricEditorPayouts">—</strong><span>Editor payouts due</span></div></div>
+<div class="analytics-grid"><div class="card"><div class="row"><div><h2>Agency growth</h2><div class="small">Projects created per month · last 6 months</div></div><span class="pill">LIVE DATA</span></div><div id="growthChart" class="chart-wrap"><div class="empty">Loading analytics…</div></div></div><div class="card"><h2>Top clients</h2><div class="small">Ranked by project volume</div><div id="topClients"><div class="empty">Loading…</div></div><div class="editor"><strong>Business snapshot</strong><div class="small" id="businessSnapshot">Loading…</div></div></div></div>
+<div class="card"><div class="row"><div><h2>Financial overview</h2><div class="small">Tracked project values; totals stay separated by currency.</div></div><span class="pill">ADMIN ONLY</span></div><div class="grid"><div class="stat"><strong id="metricPendingAmount">—</strong><span class="small">Pending client amount tracked</span></div><div class="stat"><strong id="metricPaidOut">—</strong><span class="small">Editor payouts recorded as paid</span></div></div></div></div>
+<div class="card section-anchor" id="editorApprovals"><div class="row"><div><h2>Editor approvals</h2><div class="small">Review invited editor accounts before they can access projects.</div></div><button id="refresh" class="secondary">Refresh</button></div><div id="editorList"><div class="empty">Loading editor accounts…</div></div><div id="dashMsg" class="msg"></div></div>
+<div class="card client-only section-anchor" id="clientManagement">
 <div class="row"><div><h2>Client management</h2><div class="small">Save client details and link each project to the correct client.</div></div></div>
 <form id="clientForm" class="formgrid">
 <label>Client / business name<input id="clientName" required maxlength="140" placeholder="Client name"></label>
@@ -68,7 +94,7 @@ button.secondary{background:linear-gradient(135deg,#424c5e,#293242);color:#f3f6f
 </form><div id="clientMsg" class="msg"></div>
 <div id="clientList"><div class="empty">Loading clients…</div></div>
 </div>
-<div class="card">
+<div class="card section-anchor" id="projectCreate">
 <div class="row"><div><h2>Create a project</h2><div class="small">New projects start as awaiting payment. They will not appear to editors until payment is securely verified.</div></div></div>
 <form id="projectForm" class="formgrid">
 <label>Project title<input id="projectTitle" required maxlength="140" placeholder="e.g. Brand launch reels"></label>
@@ -81,8 +107,8 @@ button.secondary{background:linear-gradient(135deg,#424c5e,#293242);color:#f3f6f
 <div class="full"><button id="createProjectBtn" type="submit">Create project (awaiting payment)</button><button id="createDemoProjectBtn" type="button" class="secondary" style="width:100%;margin-top:10px">Create DEMO project (editor testing only)</button><div class="small muted">Demo projects are clearly marked, use test-only paid/open status, and do not change real project payment records.</div></div>
 </form><div id="projectMsg" class="msg"></div>
 </div>
-<div class="card"><div class="row"><div><h2>All projects</h2><div class="small">Search projects, track status, payment and assigned editors.</div></div><button id="adminProjectRefresh" class="secondary">Refresh</button></div><div class="formgrid" style="margin-top:12px"><label>Search projects<input id="projectSearch" type="search" placeholder="Project code, title, service or pack"></label><label>Filter by status<select id="projectStatusFilter"><option value="">All statuses</option><option value="awaiting_payment">Awaiting payment</option><option value="open">Open</option><option value="assigned">Assigned</option><option value="in_progress">In progress</option><option value="review">In review</option><option value="revision">Revision</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></label></div><div id="adminProjects"><div class="empty">Loading projects…</div></div></div>
-<div class="card"><h2>Project applications</h2><div class="small">Review every editor application and assign one editor to each eligible project.</div><div id="adminApplications"><div class="empty">Loading applications…</div></div><div id="applicationMsg" class="msg"></div></div>
+<div class="card section-anchor" id="allProjects"><div class="row"><div><h2>All projects</h2><div class="small">Search projects, track status, payment and assigned editors.</div></div><button id="adminProjectRefresh" class="secondary">Refresh</button></div><div class="formgrid" style="margin-top:12px"><label>Search projects<input id="projectSearch" type="search" placeholder="Project code, title, service or pack"></label><label>Filter by status<select id="projectStatusFilter"><option value="">All statuses</option><option value="awaiting_payment">Awaiting payment</option><option value="open">Open</option><option value="assigned">Assigned</option><option value="in_progress">In progress</option><option value="review">In review</option><option value="revision">Revision</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></label></div><div id="adminProjects"><div class="empty">Loading projects…</div></div></div>
+<div class="card section-anchor" id="projectApplications"><h2>Project applications</h2><div class="small">Review every editor application and assign one editor to each eligible project.</div><div id="adminApplications"><div class="empty">Loading applications…</div></div><div id="applicationMsg" class="msg"></div></div></div>
 </section>
 
 <section id="clientDashboard" class="hidden client-only"><div class="card"><div class="row"><div><div class="brand">CLIENT WORKSPACE</div><h2 id="clientHello">Welcome</h2><div class="small">Track your projects, payment status, and editing progress.</div></div><button id="clientLogout" class="secondary">Sign out</button></div></div><div class="card"><div class="row"><h2>Your projects</h2><button id="clientRefresh" class="secondary">Refresh</button></div><div id="clientProjects"><div class="empty">Loading your projects…</div></div><div id="clientMsg" class="msg"></div></div></section>
@@ -107,7 +133,7 @@ $('loginForm').onsubmit=async e=>{e.preventDefault();$('loginBtn').disabled=true
 let {data,error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;
 let p=await sb.from('profiles').select('id,full_name,role,account_status').eq('id',data.user.id).single();if(p.error)throw p.error;currentProfile=p.data;
 if(currentProfile.account_status!=='approved'){await sb.auth.signOut();throw new Error('Your Arte Vera account is not approved yet.')}
-if(currentProfile.role==='admin'){$('hello').textContent=currentProfile.full_name||data.user.email;show('dashboard');await Promise.all([loadEditors(),loadAdminProjects(),loadClients()]);}
+if(currentProfile.role==='admin'){$('hello').textContent=currentProfile.full_name||data.user.email;show('dashboard');await Promise.all([loadEditors(),loadAdminProjects(),loadClients(),loadAdminMetrics()]);}
 else if(currentProfile.role==='editor'){$('editorHello').textContent=currentProfile.full_name||data.user.email;show('editorDashboard');await loadEditorWorkspace();}
 else if(currentProfile.role==='client'){await sb.auth.signOut();throw new Error('Client access is handled through a separate Arte Vera client website.');}
 else{await sb.auth.signOut();throw new Error('This account does not have portal access.')}
@@ -122,6 +148,7 @@ msg('dashMsg','Pending editor list loaded.');
 async function review(id,decision,a,b){if(!confirm('Are you sure you want to '+decision+' this editor?'))return;a.disabled=b.disabled=true;msg('dashMsg','Updating editor status…');try{let {error}=await sb.rpc('review_editor',{p_editor_id:id,p_decision:decision});if(error)throw error;msg('dashMsg','Editor status updated successfully.');await loadEditors()}catch(e){msg('dashMsg','Update failed: '+e.message);a.disabled=b.disabled=false}}
 $('refresh').onclick=loadEditors;
 $('logout').onclick=async()=>{await sb.auth.signOut();currentProfile=null;show('login');msg('loginMsg','Signed out.')};
+$('adminSignOutSide').onclick=()=>$('logout').click();document.querySelectorAll('.side-link[data-target]').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.side-link').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.getElementById(btn.dataset.target)?.scrollIntoView({behavior:'smooth',block:'start'})});
 
 async function loadClients(){
 try{
