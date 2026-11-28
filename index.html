@@ -2,21 +2,56 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Arte Vera | Admin Portal</title>
+<title>Arte Vera | Creative Operations Portal</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <style>
 .client-only{display:none!important}
-:root{color-scheme:dark;--bg:#0c0d10;--panel:#15171c;--line:#292c34;--muted:#a4a8b3;--gold:#d8b77a;--white:#f5f5f4}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#202027 0,#0c0d10 48%);color:var(--white);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;padding:20px}
-.wrap{width:min(100%,900px);margin:28px auto}.brand{color:var(--gold);letter-spacing:.25em;font-size:12px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}h1{font-size:24px;letter-spacing:.1em;margin:4px 0}h2{font-size:19px;margin:0 0 8px}.muted,.small{color:var(--muted)}.small{font-size:12px}
-.card{background:rgba(21,23,28,.96);border:1px solid var(--line);border-radius:16px;padding:20px;margin:14px 0;box-shadow:0 14px 40px #0005}
-input{width:100%;background:#0d0f13;color:white;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:15px}
-label{display:block;margin:12px 0 6px;font-size:13px}button{border:0;border-radius:9px;padding:11px 14px;background:var(--gold);color:#17130c;font-weight:700;cursor:pointer}button:disabled{opacity:.5}button.secondary{background:#272a32;color:#fff;border:1px solid var(--line)}button.danger{background:#452729;color:#ffd9d9;border:1px solid #754246}
-.hidden{display:none!important}.msg{color:var(--gold);font-size:13px;min-height:20px;margin-top:10px;overflow-wrap:anywhere}.pill{border:1px solid #66573e;color:var(--gold);border-radius:99px;padding:4px 9px;font-size:11px;text-transform:uppercase}
-.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.editor{border:1px solid var(--line);background:#101217;border-radius:12px;padding:14px;margin-top:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions button{flex:1;min-width:110px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.stat{background:#101217;border:1px solid var(--line);border-radius:12px;padding:15px}.stat strong{display:block;font-size:24px;color:var(--gold)}.empty{padding:18px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px;margin-top:12px}
-.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.formgrid label{display:block}.formgrid input,.formgrid select,.formgrid textarea{display:block;width:100%;margin-top:6px}.formgrid .full{grid-column:1/-1}@media(max-width:620px){.formgrid{grid-template-columns:1fr}.formgrid .full{grid-column:auto}}</style></head>
+:root{color-scheme:dark;--bg:#08090c;--panel:#14161c;--panel2:#1a1d25;--line:#303440;--muted:#a4a9b6;--gold:#d9b978;--gold2:#f0d9a7;--silver:#d8dce5;--white:#f7f7f5;--green:#83c6a0;--red:#e39a9a}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 12% -8%,#4a3b2850 0,transparent 38%),radial-gradient(ellipse at 100% 15%,#30394a40 0,transparent 32%),linear-gradient(145deg,#090a0d 0%,#101218 52%,#090a0d 100%);color:var(--white);font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;padding:22px}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.13;background-image:linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(to bottom,#000,transparent 75%)}
+.wrap{position:relative;width:min(100%,1080px);margin:24px auto 60px}
+.brand{color:var(--gold2);letter-spacing:.32em;font-size:11px;font-weight:800;text-transform:uppercase}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:24px;padding:8px 2px 18px;border-bottom:1px solid #ffffff18}
+h1{font-size:clamp(23px,4vw,32px);letter-spacing:.13em;margin:5px 0;font-weight:800}
+h2{font-size:20px;letter-spacing:-.02em;margin:0 0 8px;font-weight:750}
+h3{font-size:16px;margin:0 0 6px}
+p{margin:10px 0}
+.muted,.small{color:var(--muted)}.small{font-size:12px;line-height:1.55}
+.card{position:relative;overflow:hidden;background:linear-gradient(145deg,#191c23f5,#111319f5);border:1px solid #ffffff18;border-radius:20px;padding:22px;margin:16px 0;box-shadow:0 18px 48px #0007,inset 0 1px #ffffff08}
+.card:before{content:"";position:absolute;left:0;top:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,#d9b97875,transparent);pointer-events:none}
+.card .card{background:#101218;border-color:#ffffff14;box-shadow:none}
+input,select,textarea{width:100%;background:#0c0e13;color:var(--white);border:1px solid #3a3e49;border-radius:11px;padding:13px 14px;font:inherit;font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px #d9b97820}
+input::placeholder,textarea::placeholder{color:#737987}
+label{display:block;margin:10px 0 6px;font-size:13px;color:#d9dce3;font-weight:600}
+button{border:1px solid #e9d29a;border-radius:11px;padding:12px 16px;background:linear-gradient(135deg,#f0d9a7,#caa765);color:#18140d;font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 6px 18px #0003;transition:transform .18s,filter .18s,box-shadow .18s}
+button:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 9px 22px #0005}
+button:active{transform:translateY(0)}
+button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+button.secondary{background:linear-gradient(135deg,#303541,#222630);color:#f0f1f4;border:1px solid #454b59;box-shadow:none}
+button.danger{background:linear-gradient(135deg,#61383b,#3c2529);color:#ffe3e3;border:1px solid #89545a;box-shadow:none}
+.hidden{display:none!important}
+.msg{color:var(--gold2);font-size:13px;min-height:20px;margin-top:10px;overflow-wrap:anywhere}
+.pill{border:1px solid #8b744b;color:var(--gold2);background:#d9b97812;border-radius:99px;padding:6px 11px;font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.editor{border:1px solid #ffffff18;background:linear-gradient(145deg,#151820,#101218);border-radius:15px;padding:16px;margin-top:12px;box-shadow:inset 0 1px #ffffff08}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}.actions button{flex:1;min-width:120px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px}
+.stat{position:relative;overflow:hidden;background:linear-gradient(145deg,#1c2029,#11141a);border:1px solid #ffffff18;border-radius:17px;padding:18px;transition:transform .2s,border-color .2s}
+.stat:hover{transform:translateY(-2px);border-color:#d9b97866}
+.stat strong{display:block;font-size:30px;line-height:1.2;color:var(--gold2);margin-bottom:7px}
+.empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed #454b59;border-radius:14px;margin-top:12px;background:#0c0e1310}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.formgrid label{display:block}.formgrid input,.formgrid select,.formgrid textarea{display:block;width:100%;margin-top:6px}.formgrid .full{grid-column:1/-1}
+.file-list{display:grid;gap:8px;margin-top:10px}.file-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid #ffffff16;background:#0c0e13;border-radius:11px}.file-item a{color:var(--gold2);font-size:13px;font-weight:650;text-decoration:none;overflow-wrap:anywhere}.file-item a:hover{text-decoration:underline}.file-meta{font-size:11px;color:var(--muted);white-space:nowrap}
+.upload-progress{height:7px;background:#303440;border-radius:20px;overflow:hidden;margin-top:8px}.upload-progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,#caa765,#f0d9a7);transition:width .15s}
+@media(max-width:620px){body{padding:12px}.wrap{margin:12px auto 40px}.card{padding:17px;border-radius:17px}.formgrid{grid-template-columns:1fr}.formgrid .full{grid-column:auto}.top{align-items:flex-start}.actions button{min-width:100%}.file-item{align-items:flex-start;flex-direction:column}}
+</style></head>
 <body><main class="wrap">
-<header class="top"><div><div class="brand">ARTE VERA</div><h1>ADMIN WORKSPACE</h1><div class="small">Creative Talent & Project Management</div></div><span id="rolePill" class="pill">Admin</span></header>
+<header class="top"><div><div class="brand">ARTE VERA</div><h1>ADMIN WORKSPACE</h1><div class="small">Creative Talent · Production · Project Operations</div></div><span id="rolePill" class="pill">Admin</span></header>
 
 <section id="setup" class="card">
 <h2>Connect Supabase</h2><p class="muted small">Use your Project URL and public publishable/anon key only. Never use a service_role or secret key.</p>
@@ -28,7 +63,7 @@ label{display:block;margin:12px 0 6px;font-size:13px}button{border:0;border-radi
 <form id="loginForm"><label>Email</label><input id="email" type="email" required autocomplete="username"><label>Password</label><input id="password" type="password" required autocomplete="current-password"><button id="loginBtn" style="width:100%;margin-top:15px">Sign in</button></form><div id="loginMsg" class="msg"></div><details style="margin-top:16px"><summary style="cursor:pointer;font-weight:600">New editor? Apply for an Arte Vera account</summary><p class="small muted">Create your editor account. Your access will remain pending until an admin reviews and approves your application. Verify your email if confirmation is enabled.</p><form id="editorSignupForm"><label>Full name</label><input id="editorSignupName" required maxlength="100" autocomplete="name" placeholder="Your full name"><label>Email</label><input id="editorSignupEmail" type="email" required autocomplete="email" placeholder="you@example.com"><label>Password</label><input id="editorSignupPassword" type="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters"><button id="editorSignupBtn" style="width:100%;margin-top:12px">Create editor account</button></form><div id="editorSignupMsg" class="msg"></div></details></section>
 
 <section id="dashboard" class="hidden">
-<div class="card"><div class="row"><div><div class="brand">WELCOME BACK</div><h2 id="hello">Admin</h2><div class="small">Manage editor access and project operations.</div></div><button id="logout" class="secondary">Sign out</button></div></div>
+<div class="card"><div class="row"><div><div class="brand">WELCOME BACK</div><h2 id="hello">Admin</h2><div class="small">Your command centre for talent, production and delivery.</div></div><button id="logout" class="secondary">Sign out</button></div></div>
 <div class="grid"><div class="stat"><strong id="pendingCount">—</strong><span class="small">Pending editor approvals</span></div><div class="stat"><strong>Admin</strong><span class="small">Account role</span></div></div>
 <div class="card"><div class="row"><div><h2>Editor approvals</h2><div class="small">Review invited editor accounts before they can access projects.</div></div><button id="refresh" class="secondary">Refresh</button></div><div id="editorList"><div class="empty">Loading editor accounts…</div></div><div id="dashMsg" class="msg"></div></div>
 <div class="card client-only">
@@ -61,7 +96,7 @@ label{display:block;margin:12px 0 6px;font-size:13px}button{border:0;border-radi
 <section id="clientDashboard" class="hidden client-only"><div class="card"><div class="row"><div><div class="brand">CLIENT WORKSPACE</div><h2 id="clientHello">Welcome</h2><div class="small">Track your projects, payment status, and editing progress.</div></div><button id="clientLogout" class="secondary">Sign out</button></div></div><div class="card"><div class="row"><h2>Your projects</h2><button id="clientRefresh" class="secondary">Refresh</button></div><div id="clientProjects"><div class="empty">Loading your projects…</div></div><div id="clientMsg" class="msg"></div></div></section>
 
 <section id="editorDashboard" class="hidden">
-<div class="card"><div class="row"><div><div class="brand">EDITOR WORKSPACE</div><h2 id="editorHello">Welcome</h2><div class="small">Browse available paid projects and track your work.</div></div><button id="editorLogout" class="secondary">Sign out</button></div></div>
+<div class="card"><div class="row"><div><div class="brand">EDITOR WORKSPACE</div><h2 id="editorHello">Welcome</h2><div class="small">Your production desk · briefs, assets and delivery progress.</div></div><button id="editorLogout" class="secondary">Sign out</button></div></div>
 <div class="grid"><div class="stat"><strong id="availableCount">—</strong><span class="small">Available projects</span></div><div class="stat"><strong id="myApplicationCount">—</strong><span class="small">My applications</span></div><div class="stat"><strong id="myAssignmentCount">—</strong><span class="small">My assigned projects</span></div></div>
 <div class="card"><div class="row"><div><h2>Available projects</h2><div class="small">Only paid and open projects are shown.</div></div><button id="editorRefresh" class="secondary">Refresh</button></div><div id="availableProjects"><div class="empty">Loading projects…</div></div><div id="editorMsg" class="msg"></div></div>
 <div class="card"><h2>My applications</h2><div id="myApplications"><div class="empty">Loading applications…</div></div></div>
@@ -150,7 +185,7 @@ if(!['completed','cancelled','awaiting_payment','open'].includes(p.status)){
 const cancel=document.createElement('button');cancel.className='danger';cancel.textContent='Cancel project';cancel.onclick=()=>updateProjectStatus(p.id,'cancelled',cancel);actions.append(cancel);
 }
 const historyBox=document.createElement('div');historyBox.className='small';historyBox.style.marginTop='10px';
-card.append(title,detail,brief,count,actions,historyBox);$('adminProjects').append(card)
+const mediaPanel=document.createElement('div');mediaPanel.className='editor';const mediaHead=document.createElement('div');mediaHead.className='row';const mediaTitle=document.createElement('strong');mediaTitle.textContent='Project media & files';const uploadBtn=document.createElement('button');uploadBtn.className='secondary';uploadBtn.textContent='Upload photos / videos';const fileInput=document.createElement('input');fileInput.type='file';fileInput.multiple=true;fileInput.accept='image/*,video/*,.pdf,.zip,.txt';fileInput.hidden=true;const uploadStatus=document.createElement('div');uploadStatus.className='small';uploadBtn.onclick=()=>fileInput.click();fileInput.onchange=async()=>{if(!fileInput.files?.length)return;uploadBtn.disabled=true;try{await uploadProjectMedia(p.id,[...fileInput.files],uploadStatus);await loadProjectFiles(p.id,mediaList);uploadStatus.textContent='All selected files uploaded successfully.';}catch(e){uploadStatus.textContent='Upload failed: '+e.message;}finally{uploadBtn.disabled=false;fileInput.value=''}};mediaHead.append(mediaTitle,uploadBtn);const mediaList=document.createElement('div');mediaPanel.append(mediaHead,fileInput,uploadStatus,mediaList);card.append(title,detail,brief,count,actions,historyBox,mediaPanel);$('adminProjects').append(card);loadProjectFiles(p.id,mediaList)
 })
 }
 if(!apps.length)$('adminApplications').innerHTML='<div class="empty">No editor applications received yet.</div>';
@@ -245,6 +280,54 @@ row.append(title,time,detail);target.append(row)
 }catch(e){target.textContent='Could not load history: '+e.message}
 }
 
+
+const MEDIA_BUCKET='project-media-private';
+const SUPABASE_PROJECT_REF='wkuwzndrzuauzwxuxvxs';
+function readableSize(bytes){if(!bytes)return '—';const units=['B','KB','MB','GB'];let n=bytes,i=0;while(n>=1024&&i<units.length-1){n/=1024;i++}return n.toFixed(i?1:0)+' '+units[i]}
+async function loadProjectFiles(projectId,target){
+target.innerHTML='<div class="small muted">Loading shared files…</div>';
+try{
+const {data,error}=await sb.storage.from(MEDIA_BUCKET).list(projectId,{limit:100,sortBy:{column:'created_at',order:'desc'}});
+if(error)throw error;
+target.innerHTML='';
+const files=(data||[]).filter(x=>x.name&&!x.id?.endsWith('/'));
+if(!files.length){target.innerHTML='<div class="small muted" style="margin-top:8px">No project files shared yet.</div>';return}
+for(const file of files){
+const path=projectId+'/'+file.name;
+const signed=await sb.storage.from(MEDIA_BUCKET).createSignedUrl(path,600);
+if(signed.error)throw signed.error;
+const row=document.createElement('div');row.className='file-item';
+const link=document.createElement('a');link.href=signed.data.signedUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent=file.name;
+const meta=document.createElement('span');meta.className='file-meta';meta.textContent=readableSize(file.metadata?.size);
+row.append(link,meta);target.append(row)
+}
+}catch(e){target.textContent='Could not load project files: '+e.message}
+}
+async function uploadProjectMedia(projectId,files,statusTarget){
+if(!window.tus?.Upload)throw new Error('Resumable uploader did not load. Refresh the portal and try again.');
+const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)throw new Error('Please sign in again.');
+const apiKey=sessionStorage.getItem('av_key');if(!apiKey)throw new Error('Portal publishable key is missing. Reconnect the portal.');
+for(let i=0;i<files.length;i++){
+const file=files[i];if(file.size>524288000)throw new Error(file.name+' exceeds the 500 MB per-file limit.');
+if(!/^(image\/|video\/|application\/pdf|application\/zip|application\/x-zip-compressed|text\/plain)/i.test(file.type||''))throw new Error(file.name+' is not an allowed image, video, PDF, ZIP or text file.');
+const safeName=file.name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(-120);
+const objectName=projectId+'/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'_'+safeName;
+statusTarget.textContent='Uploading '+(i+1)+'/'+files.length+': '+file.name+' · 0%';
+await new Promise((resolve,reject)=>{
+const upload=new window.tus.Upload(file,{
+endpoint:'https://'+SUPABASE_PROJECT_REF+'.storage.supabase.co/storage/v1/upload/resumable',
+retryDelays:[0,3000,5000,10000,20000],
+headers:{authorization:'Bearer '+session.access_token,apikey:apiKey},
+uploadDataDuringCreation:true,removeFingerprintOnSuccess:true,chunkSize:6*1024*1024,
+metadata:{bucketName:MEDIA_BUCKET,objectName,contentType:file.type||'application/octet-stream',cacheControl:'3600'},
+onError:error=>reject(error),
+onProgress:(uploaded,total)=>{const pct=total?Math.round(uploaded/total*100):0;statusTarget.textContent='Uploading '+(i+1)+'/'+files.length+': '+file.name+' · '+pct+'%'},
+onSuccess:()=>resolve()
+});
+upload.start()
+})
+}
+}
 async function loadClientWorkspace(){
 msg('clientMsg','Loading your projects…');$('clientProjects').innerHTML='';
 try{
@@ -296,7 +379,7 @@ const start=document.createElement('button');start.textContent='Mark in progress
 const review=document.createElement('button');review.className='secondary';review.textContent='Submit for review';review.onclick=()=>editorUpdateStatus(p.id,'review',review);actions.append(review);
 }
 const hist=document.createElement('button');hist.className='secondary';hist.textContent='View project history';const historyBox=document.createElement('div');historyBox.className='small';hist.onclick=()=>loadProjectHistory(p.id,historyBox);actions.append(hist);
-el.append(h,d,b,actions,historyBox);$('myAssignments').append(el)
+const mediaPanel=document.createElement('div');mediaPanel.className='editor';const mediaTitle=document.createElement('strong');mediaTitle.textContent='Files shared by Arte Vera';const mediaList=document.createElement('div');mediaPanel.append(mediaTitle,mediaList);el.append(h,d,b,actions,historyBox,mediaPanel);$('myAssignments').append(el);loadProjectFiles(p.id,mediaList)
 });
 msg('editorMsg','Workspace updated.');
 }catch(e){msg('editorMsg','Could not load workspace: '+e.message);$('availableProjects').innerHTML='<div class="empty">Project data could not be loaded. Please contact the admin.</div>'}
